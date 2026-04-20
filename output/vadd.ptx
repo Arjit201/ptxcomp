@@ -1,0 +1,44 @@
+.version 7.0
+.target sm_75
+.address_size 64
+
+.visible .entry vadd(
+    .param .u64 vadd_param_0,
+    .param .u64 vadd_param_1,
+    .param .u64 vadd_param_2,
+    .param .s32 vadd_param_3
+)
+{
+    .reg .s32 %r<11>;
+    .reg .u64 %rd_A;
+    .reg .u64 %rd_B;
+    .reg .u64 %rd_C;
+    .reg .pred %p<1>;
+
+    ld.param.u64 %rd_A, [vadd_param_0];
+    ld.param.u64 %rd_B, [vadd_param_1];
+    ld.param.u64 %rd_C, [vadd_param_2];
+    ld.param.s32 %r3, [vadd_param_3];
+
+    mov.u32 %r2, %ctaid.x;
+    mov.u32 %r3, %ntid.x;
+    mul.lo.s32 %r4, %r2, %r3;
+    mov.u32 %r5, %tid.x;
+    add.s32 %r6, %r4, %r5;
+    mov.s32 %r1, %r6;
+    setp.lt.s32 %r7, %r1, %r0;
+    @!%r7 bra .L0;
+    mul.wide.s32 %rd_tmp_load, %r1, 4;
+    add.u64 %rd_tmp_load, %rd_A, %rd_tmp_load;
+    ld.global.s32 %r8, [%rd_tmp_load];
+    mul.wide.s32 %rd_tmp_load, %r1, 4;
+    add.u64 %rd_tmp_load, %rd_B, %rd_tmp_load;
+    ld.global.s32 %r9, [%rd_tmp_load];
+    add.s32 %r10, %r8, %r9;
+    mul.wide.s32 %rd_tmp_store, %r1, 4;
+    add.u64 %rd_tmp_store, %rd_C, %rd_tmp_store;
+    st.global.s32 [%rd_tmp_store], %r10;
+.L0:
+    ret;
+}
+

@@ -1,0 +1,37 @@
+.version 7.0
+.target sm_75
+.address_size 64
+
+.visible .entry scale(
+    .param .u64 scale_param_0,
+    .param .s32 scale_param_1,
+    .param .s32 scale_param_2
+)
+{
+    .reg .s32 %r<11>;
+    .reg .u64 %rd_arr;
+    .reg .pred %p<1>;
+
+    ld.param.u64 %rd_arr, [scale_param_0];
+    ld.param.s32 %r1, [scale_param_1];
+    ld.param.s32 %r2, [scale_param_2];
+
+    mov.u32 %r3, %ctaid.x;
+    mov.u32 %r4, %ntid.x;
+    mul.lo.s32 %r5, %r3, %r4;
+    mov.u32 %r6, %tid.x;
+    add.s32 %r7, %r5, %r6;
+    mov.s32 %r2, %r7;
+    setp.lt.s32 %r8, %r2, %r1;
+    @!%r8 bra .L0;
+    mul.wide.s32 %rd_tmp_load, %r2, 4;
+    add.u64 %rd_tmp_load, %rd_arr, %rd_tmp_load;
+    ld.global.s32 %r9, [%rd_tmp_load];
+    mul.lo.s32 %r10, %r9, %r0;
+    mul.wide.s32 %rd_tmp_store, %r2, 4;
+    add.u64 %rd_tmp_store, %rd_arr, %rd_tmp_store;
+    st.global.s32 [%rd_tmp_store], %r10;
+.L0:
+    ret;
+}
+

@@ -1,0 +1,3 @@
+C:/Users/laksh/Desktop/project/ptx_compiler/build/CMakeFiles/ptxc.dir
+C:/Users/laksh/Desktop/project/ptx_compiler/build/CMakeFiles/edit_cache.dir
+C:/Users/laksh/Desktop/project/ptx_compiler/build/CMakeFiles/rebuild_cache.dir

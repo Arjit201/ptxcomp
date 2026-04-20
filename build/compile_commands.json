@@ -1,0 +1,32 @@
+[
+{
+  "directory": "C:/Users/laksh/Desktop/project/ptx_compiler/build",
+  "command": "C:\\MinGW\\bin\\g++.exe  @CMakeFiles/ptxc.dir/includes_CXX.rsp -g -std=c++1z -Wall -Wextra -Wpedantic -O2 -o CMakeFiles\\ptxc.dir\\src\\lexer.cpp.obj -c C:\\Users\\laksh\\Desktop\\project\\ptx_compiler\\src\\lexer.cpp",
+  "file": "C:/Users/laksh/Desktop/project/ptx_compiler/src/lexer.cpp",
+  "output": "CMakeFiles/ptxc.dir/src/lexer.cpp.obj"
+},
+{
+  "directory": "C:/Users/laksh/Desktop/project/ptx_compiler/build",
+  "command": "C:\\MinGW\\bin\\g++.exe  @CMakeFiles/ptxc.dir/includes_CXX.rsp -g -std=c++1z -Wall -Wextra -Wpedantic -O2 -o CMakeFiles\\ptxc.dir\\src\\parser.cpp.obj -c C:\\Users\\laksh\\Desktop\\project\\ptx_compiler\\src\\parser.cpp",
+  "file": "C:/Users/laksh/Desktop/project/ptx_compiler/src/parser.cpp",
+  "output": "CMakeFiles/ptxc.dir/src/parser.cpp.obj"
+},
+{
+  "directory": "C:/Users/laksh/Desktop/project/ptx_compiler/build",
+  "command": "C:\\MinGW\\bin\\g++.exe  @CMakeFiles/ptxc.dir/includes_CXX.rsp -g -std=c++1z -Wall -Wextra -Wpedantic -O2 -o CMakeFiles\\ptxc.dir\\src\\irgen.cpp.obj -c C:\\Users\\laksh\\Desktop\\project\\ptx_compiler\\src\\irgen.cpp",
+  "file": "C:/Users/laksh/Desktop/project/ptx_compiler/src/irgen.cpp",
+  "output": "CMakeFiles/ptxc.dir/src/irgen.cpp.obj"
+},
+{
+  "directory": "C:/Users/laksh/Desktop/project/ptx_compiler/build",
+  "command": "C:\\MinGW\\bin\\g++.exe  @CMakeFiles/ptxc.dir/includes_CXX.rsp -g -std=c++1z -Wall -Wextra -Wpedantic -O2 -o CMakeFiles\\ptxc.dir\\src\\ptx_emitter.cpp.obj -c C:\\Users\\laksh\\Desktop\\project\\ptx_compiler\\src\\ptx_emitter.cpp",
+  "file": "C:/Users/laksh/Desktop/project/ptx_compiler/src/ptx_emitter.cpp",
+  "output": "CMakeFiles/ptxc.dir/src/ptx_emitter.cpp.obj"
+},
+{
+  "directory": "C:/Users/laksh/Desktop/project/ptx_compiler/build",
+  "command": "C:\\MinGW\\bin\\g++.exe  @CMakeFiles/ptxc.dir/includes_CXX.rsp -g -std=c++1z -Wall -Wextra -Wpedantic -O2 -o CMakeFiles\\ptxc.dir\\src\\main.cpp.obj -c C:\\Users\\laksh\\Desktop\\project\\ptx_compiler\\src\\main.cpp",
+  "file": "C:/Users/laksh/Desktop/project/ptx_compiler/src/main.cpp",
+  "output": "CMakeFiles/ptxc.dir/src/main.cpp.obj"
+}
+]
