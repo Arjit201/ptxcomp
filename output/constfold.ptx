@@ -1,0 +1,40 @@
+.version 7.0
+.target sm_75
+.address_size 64
+
+.visible .entry constdemo(
+    .param .u64 constdemo_param_0,
+    .param .s32 constdemo_param_1
+)
+{
+    .reg .s32 %r<15>;
+    .reg .u64 %rd_arr;
+    .reg .pred %p<1>;
+
+    ld.param.u64 %rd_arr, [constdemo_param_0];
+    ld.param.s32 %r1, [constdemo_param_1];
+
+    mov.u32 %r2, %ctaid.x;
+    mov.u32 %r3, %ntid.x;
+    mul.lo.s32 %r4, %r2, %r3;
+    mov.u32 %r5, %tid.x;
+    add.s32 %r6, %r4, %r5;
+    mov.s32 %r1, %r6;
+    mov.s32 %r7, 16;
+    mov.s32 %r8, 8;
+    mov.s32 %r9, %r0;
+    mov.s32 %r10, 0;
+    setp.lt.s32 %r11, %r1, %r0;
+    @!%r11 bra .L0;
+    mul.wide.s32 %rd_tmp_load, %r1, 4;
+    add.u64 %rd_tmp_load, %rd_arr, %rd_tmp_load;
+    ld.global.s32 %r12, [%rd_tmp_load];
+    add.s32 %r13, %r12, %r7;
+    add.s32 %r14, %r13, %r8;
+    mul.wide.s32 %rd_tmp_store, %r1, 4;
+    add.u64 %rd_tmp_store, %rd_arr, %rd_tmp_store;
+    st.global.s32 [%rd_tmp_store], %r14;
+.L0:
+    ret;
+}
+

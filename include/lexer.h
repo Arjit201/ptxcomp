@@ -12,7 +12,7 @@ enum class TokenKind {
     // Identifiers
     Ident,
     // Keywords
-    KwKernel, KwInt, KwFloat, KwFor, KwIf, KwReturn,
+    KwKernel, KwInt, KwFloat, KwFor, KwIf, KwElse, KwReturn,
     KwThreadIdx, KwBlockIdx, KwBlockDim,
     // Operators
     Plus, Minus, Star, Slash, Percent,

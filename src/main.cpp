@@ -1,5 +1,6 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
+#include "../include/constfold.h"
 #include "../include/irgen.h"
 #include "../include/ptx_emitter.h"
 
@@ -8,12 +9,7 @@
 #include <sstream>
 #include <string>
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Example MiniCUDA programs
-// ─────────────────────────────────────────────────────────────────────────────
-
 const char* EXAMPLE_VADD = R"(
-// Vector addition:  C[i] = A[i] + B[i]
 kernel vadd(int A[], int B[], int C[], int n) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid < n) {
@@ -23,7 +19,6 @@ kernel vadd(int A[], int B[], int C[], int n) {
 )";
 
 const char* EXAMPLE_SAXPY = R"(
-// SAXPY:  Y[i] = alpha * X[i] + Y[i]
 kernel saxpy(float alpha, float X[], float Y[], int n) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid < n) {
@@ -32,19 +27,33 @@ kernel saxpy(float alpha, float X[], float Y[], int n) {
 }
 )";
 
-const char* EXAMPLE_SCALE = R"(
-// Scale every element of an array by a constant
-kernel scale(int arr[], int factor, int n) {
+const char* EXAMPLE_CLAMP = R"(
+kernel clamp(int arr[], int n) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid < n) {
-        arr[tid] = arr[tid] * factor;
+        if (arr[tid] < 0) {
+            arr[tid] = 0;
+        } else {
+            if (arr[tid] > 255) {
+                arr[tid] = 255;
+            }
+        }
     }
 }
 )";
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Pipeline
-// ─────────────────────────────────────────────────────────────────────────────
+const char* EXAMPLE_CONSTFOLD = R"(
+kernel constdemo(int arr[], int n) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = 4 * 4;
+    int offset = 10 - 2;
+    int scale  = n * 1;
+    int zero   = n * 0;
+    if (tid < n) {
+        arr[tid] = arr[tid] + stride + offset;
+    }
+}
+)";
 
 struct CompileResult {
     std::string ptx;
@@ -55,33 +64,32 @@ struct CompileResult {
 CompileResult compile(const std::string& source, bool verbose = false) {
     CompileResult result;
     try {
-        // Stage 1: Lex
         Lexer lexer(source);
         auto tokens = lexer.tokenize();
-        if (verbose) {
-            std::cout << "[Lexer] " << tokens.size() - 1 << " tokens\n";
-        }
+        if (verbose)
+            std::cout << "[1/4] Lexer      : " << tokens.size() - 1 << " tokens\n";
 
-        // Stage 2: Parse
         Parser parser(std::move(tokens));
         Program ast = parser.parse();
         if (verbose) {
-            std::cout << "[Parser] " << ast.kernels.size() << " kernel(s)\n";
+            std::cout << "[2/4] Parser     : " << ast.kernels.size() << " kernel(s)";
             for (auto& k : ast.kernels)
-                std::cout << "         kernel '" << k.name
-                          << "' with " << k.params.size() << " params\n";
+                std::cout << " [" << k.name << " / " << k.params.size() << " params]";
+            std::cout << "\n";
         }
 
-        // Stage 3: IR lowering
+        ConstantFolder folder;
+        ast = folder.fold(std::move(ast));
+        if (verbose)
+            std::cout << "[3/4] ConstFold  : literals evaluated at compile time\n";
+
         IRGen irgen;
         IRProgram ir = irgen.generate(ast);
-        if (verbose) {
+        if (verbose)
             for (auto& k : ir.kernels)
-                std::cout << "[IRGen]  kernel '" << k.name
-                          << "' → " << k.instrs.size() << " IR instructions\n";
-        }
+                std::cout << "[4/4] IRGen      : kernel '" << k.name
+                          << "' -> " << k.instrs.size() << " IR instructions\n";
 
-        // Stage 4: PTX emission
         PTXEmitter emitter;
         result.ptx = emitter.emit(ir);
         result.ok = true;
@@ -92,66 +100,51 @@ CompileResult compile(const std::string& source, bool verbose = false) {
     return result;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Main
-// ─────────────────────────────────────────────────────────────────────────────
-
 int main(int argc, char* argv[]) {
-    std::cout << "╔══════════════════════════════════════════════╗\n";
-    std::cout << "║   MiniCUDA → PTX Compiler  (sm_75 / PTX 7)  ║\n";
-    std::cout << "╚══════════════════════════════════════════════╝\n\n";
+    std::cout << "================================================\n";
+    std::cout << "  MiniCUDA -> PTX Compiler  (sm_75 / PTX ISA 7)\n";
+    std::cout << "  Passes: Lex -> Parse -> ConstFold -> IR -> PTX\n";
+    std::cout << "================================================\n\n";
 
-    struct Example { const char* name; const char* src; const char* outfile; };
+    struct Example { const char* name; const char* src; const char* outfile; const char* note; };
     Example examples[] = {
-        {"vadd  (vector addition)",  EXAMPLE_VADD,  "output/vadd.ptx"},
-        {"saxpy (float SAXPY)",       EXAMPLE_SAXPY, "output/saxpy.ptx"},
-        {"scale (scalar multiply)",   EXAMPLE_SCALE, "output/scale.ptx"},
+        {"vadd  (vector addition)",    EXAMPLE_VADD,       "output/vadd.ptx",      "baseline kernel"},
+        {"saxpy (float SAXPY)",         EXAMPLE_SAXPY,      "output/saxpy.ptx",     "float regs + pointer params"},
+        {"clamp (if/else branches)",    EXAMPLE_CLAMP,      "output/clamp.ptx",     "NEW: if/else -> setp + bra + jump"},
+        {"constdemo (constant folding)",EXAMPLE_CONSTFOLD,  "output/constfold.ptx", "NEW: 4*4->16, 10-2->8, n*1->n, n*0->0"},
     };
 
     bool anyFailed = false;
     for (auto& ex : examples) {
-        std::cout << "──── Compiling: " << ex.name << " ────\n";
-        std::cout << "Source:\n" << ex.src << "\n";
+        std::cout << "---- " << ex.name << "\n";
+        std::cout << "     (" << ex.note << ")\n";
+        std::cout << "Source:" << ex.src << "\n";
 
-        auto result = compile(ex.src, /*verbose=*/true);
+        auto result = compile(ex.src, true);
         if (!result.ok) {
             std::cerr << "ERROR: " << result.error << "\n\n";
             anyFailed = true;
             continue;
         }
 
-        std::cout << "\nGenerated PTX:\n";
-        std::cout << result.ptx;
+        std::cout << "\nGenerated PTX:\n" << result.ptx;
 
-        // Write to file
         std::ofstream f(ex.outfile);
-        if (f) {
-            f << result.ptx;
-            std::cout << "[Output] Written to " << ex.outfile << "\n";
-        }
+        if (f) { f << result.ptx; std::cout << "[Output] Written to " << ex.outfile << "\n"; }
         std::cout << "\n";
     }
 
-    // If user provided a file argument, compile that too
     if (argc == 2) {
         std::ifstream f(argv[1]);
-        if (!f) {
-            std::cerr << "Cannot open " << argv[1] << "\n";
-            return 1;
-        }
+        if (!f) { std::cerr << "Cannot open " << argv[1] << "\n"; return 1; }
         std::ostringstream ss; ss << f.rdbuf();
-        std::cout << "──── Compiling user file: " << argv[1] << " ────\n";
+        std::cout << "---- Compiling: " << argv[1] << " ----\n";
         auto result = compile(ss.str(), true);
-        if (!result.ok) {
-            std::cerr << "ERROR: " << result.error << "\n";
-            return 1;
-        }
+        if (!result.ok) { std::cerr << "ERROR: " << result.error << "\n"; return 1; }
         std::cout << result.ptx;
-
-        std::string outpath = std::string(argv[1]) + ".ptx";
-        std::ofstream out(outpath);
-        out << result.ptx;
-        std::cout << "[Output] Written to " << outpath << "\n";
+        std::string out = std::string(argv[1]) + ".ptx";
+        std::ofstream o(out); o << result.ptx;
+        std::cout << "[Output] Written to " << out << "\n";
     }
 
     return anyFailed ? 1 : 0;

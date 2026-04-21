@@ -153,9 +153,13 @@ std::unique_ptr<IfStmt> Parser::parseIf() {
     auto cond = parseExpr();
     expect(TokenKind::RParen, ")");
     auto thenBody = parseBlock();
+    std::vector<Stmt> elseBody;
+    if (match(TokenKind::KwElse))
+        elseBody = parseBlock();
     auto s = std::make_unique<IfStmt>();
     s->cond = std::move(cond);
     s->thenBody = std::move(thenBody);
+    s->elseBody = std::move(elseBody);
     s->line = line;
     return s;
 }

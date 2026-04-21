@@ -9,6 +9,7 @@ static const std::unordered_map<std::string,TokenKind> KEYWORDS = {
     {"float",    TokenKind::KwFloat},
     {"for",      TokenKind::KwFor},
     {"if",       TokenKind::KwIf},
+    {"else",     TokenKind::KwElse},
     {"return",   TokenKind::KwReturn},
     {"threadIdx",TokenKind::KwThreadIdx},
     {"blockIdx", TokenKind::KwBlockIdx},

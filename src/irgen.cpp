@@ -113,13 +113,25 @@ void IRGen::genFor(const ForStmt& s) {
 }
 
 void IRGen::genIf(const IfStmt& s) {
-    std::string condReg  = genExpr(s.cond);
+    std::string condReg   = genExpr(s.cond);
+    std::string elseLabel = cur_->newLabel();
     std::string exitLabel = cur_->newLabel();
 
-    emit(IR_BranchNot{condReg, exitLabel});
+    emit(IR_BranchNot{condReg, elseLabel});
+
+    // then branch
     for (auto& stmt : s.thenBody)
         genStmt(stmt);
-    emit(IR_Label{exitLabel});
+
+    if (!s.elseBody.empty()) {
+        emit(IR_Jump{exitLabel});          // skip else
+        emit(IR_Label{elseLabel});
+        for (auto& stmt : s.elseBody)
+            genStmt(stmt);
+        emit(IR_Label{exitLabel});
+    } else {
+        emit(IR_Label{elseLabel});         // elseLabel == exitLabel when no else
+    }
 }
 
 void IRGen::genReturn(const ReturnStmt& s) {
